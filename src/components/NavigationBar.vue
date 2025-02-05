@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { auth, db } from '@/firebase'
-import { UserIcon } from '@heroicons/vue/20/solid'
+import { auth, db, googleProvider } from '@/firebase'
+import { ChevronRightIcon, UserIcon, UserMinusIcon } from '@heroicons/vue/20/solid'
 import ProgressIndicator from '@/components/ProgressIndicator.vue'
 import { formatDate } from 'date-fns'
 import { UserPlusIcon, XMarkIcon } from '@heroicons/vue/24/outline'
-import { doc, getDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc } from 'firebase/firestore'
 import type { User } from '@/types'
-import { SparklesIcon } from '@heroicons/vue/16/solid'
+import { ArrowLeftIcon, SparklesIcon } from '@heroicons/vue/16/solid'
 import SignInModal from './SignInModal.vue'
+import { reauthenticateWithPopup } from 'firebase/auth'
 
 const showAccountModal = ref<boolean>(false)
 const isLoggedIn = ref<boolean | null>(null)
@@ -26,6 +27,8 @@ const props = withDefaults(
 const currentDate = ref('')
 const signInModal = ref(false)
 const showbottomPopup = ref<boolean | null>(null)
+const accountPage = ref<'home' | 'delete'>('home')
+const deleteButtonLoading = ref(false)
 
 onMounted(() => {
   currentDate.value = formatDate(new Date(), 'MMMM dd, yyyy')
@@ -44,6 +47,16 @@ onMounted(() => {
     }
   })
 })
+
+const deleteAccount = async () => {
+  deleteButtonLoading.value = true
+  await reauthenticateWithPopup(auth.currentUser!, googleProvider)
+  await deleteDoc(doc(db, 'users', auth.currentUser?.uid!))
+  await auth.currentUser?.delete()
+  auth.signOut()
+  deleteButtonLoading.value = false
+  showAccountModal.value = false
+}
 </script>
 
 <template>
@@ -86,7 +99,7 @@ onMounted(() => {
     class="fixed inset-0 z-20 flex items-center justify-center bg-black/20"
     v-if="showAccountModal"
   >
-    <div class="w-full max-w-2xl rounded-md bg-white p-7 shadow-lg">
+    <div class="max-h-9/10 w-full max-w-2xl overflow-auto rounded-md bg-white p-7 shadow-lg">
       <div class="mb-5 flex items-center">
         <h3 class="font-serif text-2xl">Account</h3>
         <button
@@ -100,8 +113,8 @@ onMounted(() => {
       <div v-if="!userData" class="flex h-80 items-center justify-center">
         <ProgressIndicator size="md" />
       </div>
-      <template v-else>
-        <div class="flex items-center gap-5">
+      <template v-else-if="accountPage == 'home'">
+        <div class="mb-5 flex items-center gap-5">
           <img
             v-if="userData.photoURL"
             :src="userData.photoURL"
@@ -115,6 +128,7 @@ onMounted(() => {
             <h4 class="font-serif">
               <span>{{ userData.displayName ?? 'Unknown' }}</span>
               <button
+                v-if="userData.subscription === 'free'"
                 class="float-end flex cursor-pointer items-center gap-3 text-purple-400 hover:text-purple-500 hover:underline"
               >
                 <SparklesIcon class="inline-block h-4 w-4" />
@@ -124,13 +138,47 @@ onMounted(() => {
             <p class="text-neutral-500">{{ userData.email }}</p>
           </div>
         </div>
+        <h4 class="mt-5 font-serif text-lg">Account settings</h4>
+        <p class="mb-7 text-neutral-500">Manage your account settings, subscription, and more.</p>
+        <button
+          @click="accountPage = 'delete'"
+          class="flex w-full cursor-pointer items-center gap-5 rounded-md border border-neutral-100 bg-neutral-50 p-3"
+        >
+          <UserMinusIcon class="h-5 w-5 text-red-600" />
+          <span class="font-serif font-medium text-red-600">Delete account</span>
+          <ChevronRightIcon class="ms-auto h-5 w-5 text-neutral-500" />
+        </button>
+      </template>
+      <template v-else-if="accountPage == 'delete'">
+        <button
+          @click="accountPage = 'home'"
+          class="group hover:text-primary-500 mb-5 flex cursor-pointer items-center gap-3 transition duration-100"
+        >
+          <ArrowLeftIcon
+            class="group-hover:text-primary-200 h-5 w-5 text-neutral-300 transition duration-100"
+          />
+          <span class="font-serif text-lg">Back</span>
+        </button>
+        <p class="mb-7 text-neutral-500">
+          Are you sure you want to delete your account? This action cannot be undone.
+        </p>
+        <button
+          @click="deleteAccount()"
+          :disabled="deleteButtonLoading"
+          class="float-end cursor-pointer rounded-md border border-transparent bg-red-500 p-2 text-sm text-red-50 duration-100 hover:bg-red-600 active:border-red-400 disabled:bg-neutral-300 disabled:hover:bg-neutral-300 disabled:active:border-neutral-300"
+        >
+          <template v-if="deleteButtonLoading">
+            <ProgressIndicator size="xs" class="text-white" />
+          </template>
+          <template v-else>Delete account</template>
+        </button>
       </template>
     </div>
   </div>
   <SignInModal v-model="signInModal" />
   <transition mode="out-in" name="popup">
     <div
-      class="fixed bottom-0 left-1/2 flex h-[450px] w-full max-w-3xl -translate-x-1/2 flex-col rounded-t-4xl border border-neutral-100 p-10 shadow-xl"
+      class="fixed bottom-0 left-1/2 z-10 flex h-[450px] w-full max-w-3xl -translate-x-1/2 flex-col rounded-t-4xl border border-neutral-100 bg-white p-10 shadow-xl"
       v-if="showbottomPopup == true"
     >
       <UserPlusIcon class="mx-auto h-10 w-10 text-neutral-400" />

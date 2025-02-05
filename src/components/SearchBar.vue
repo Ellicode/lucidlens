@@ -85,14 +85,15 @@ const askAI = async () => {
       agent_scratchpad: '',
     })
     console.log(response)
-    const titleMatch = response.output.match(/\(#(.*?)\)/)
-    let title = titleMatch ? titleMatch[1].replace(/-/g, ' ') : searchQuery.value
+    const titleMatch = response.output.match(/# (.*?)(\n|$)/)
+    let title = titleMatch ? titleMatch[1] : searchQuery.value
     title = title.charAt(0).toUpperCase() + title.slice(1)
 
     let content = response.output
     if (titleMatch) {
       content = content.replace(titleMatch[0], '')
     }
+    content = content.replace('(#title)', '')
     const image = await unsplash.search.getPhotos({
       query: title,
       orientation: 'landscape',
@@ -206,7 +207,7 @@ const askAI = async () => {
               v-if="!generatedArticle.id"
               class="bg-primary-500 text-primary-50 hover:bg-primary-600 active:border-primary-400 flex cursor-pointer items-center justify-center rounded-md border border-transparent p-2 text-sm font-medium duration-100"
             >
-              <template> Publish article </template>
+              Publish article
             </button>
             <router-link
               v-if="generatedArticle && generatedArticle.id"
