@@ -12,9 +12,9 @@ import {
   PhotoIcon,
 } from '@heroicons/vue/24/outline'
 // @ts-expect-error import Could not find a declaration file for module
-import { SearchAgent } from '@/agents/SearchAgent'
+import { SearchAgent } from '@/agents/searchAgent'
 // @ts-expect-error import Could not find a declaration file for module
-import { WriterAgent } from '@/agents/WriterAgent'
+import { WriterAgent } from '@/agents/writerAgent'
 // @ts-expect-error import Could not find a declaration file for module
 import { AgentChain } from '@/agentChain'
 import { ChatGroq } from '@langchain/groq'
