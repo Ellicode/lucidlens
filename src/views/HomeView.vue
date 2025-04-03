@@ -37,14 +37,19 @@ const getClass = (index: number) => {
 }
 
 const unsubscribe = onSnapshot(collection(db, 'articles'), (snapshot) => {
-  articles.value = snapshot.docs.map((doc) => {
-    const data = doc.data()
-    // Convert Firebase Timestamp to JavaScript Date
-    if (data.timestamp && data.timestamp.toDate) {
-      data.timestamp = data.timestamp.toDate()
-    }
-    return { id: doc.id, ...data } as Article
-  })
+  articles.value = snapshot.docs
+    .map((doc) => {
+      const data = doc.data()
+      // Convert Firebase Timestamp to JavaScript Date
+      if (data.timestamp && data.timestamp.toDate) {
+        data.timestamp = data.timestamp.toDate()
+      }
+      return { id: doc.id, ...data } as Article
+    })
+    .sort((a, b) => {
+      // Sort by timestamp descending (recent to oldest)
+      return b.timestamp.getTime() - a.timestamp.getTime()
+    })
 })
 </script>
 

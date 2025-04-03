@@ -10,6 +10,7 @@ export class WriterAgent extends BaseAgent {
         'system',
         `Make a news article formatted in markdown from the given data.
         You should write the title of the article with a markdown heading like in this example : # Title of the post.
+        You should write the description of the article (2 sentences long) with a markdown blockquote like in this example : >>> This is the description of the post.
         Use the structure of a news article.
         Be as neutral as possible.
         Make the content engaging and informative for the reader.

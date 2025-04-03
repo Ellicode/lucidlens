@@ -17,18 +17,24 @@ const isLoaded = ref(false)
     class="flex overflow-hidden border border-neutral-100"
     :class="props.layout === 'horizontal' ? 'flex-row' : 'flex-col'"
   >
-    <img
-      loading="lazy"
-      :src="props.article.image"
-      alt="Article Image"
-      @load="isLoaded = true"
+    <div
       :class="[
         props.layout === 'horizontal' ? 'h-64 w-1/3 md:h-full md:w-3/8' : 'h-48 w-full',
         isLoaded ? '' : 'animate-pulse',
       ]"
+      class="relative shrink-0 bg-neutral-300"
       v-if="props.article.image"
-      class="shrink-0 bg-neutral-300 object-cover brightness-90"
-    />
+    >
+      <img
+        loading="lazy"
+        :src="props.article.image"
+        alt="Article Image"
+        decoding="async"
+        @load="isLoaded = true"
+        v-show="isLoaded"
+        class="absolute inset-0 h-full w-full object-cover brightness-90 contrast-125"
+      />
+    </div>
     <div
       v-else
       :class="[props.layout === 'horizontal' ? 'h-64 w-1/3 md:h-full md:w-3/8' : 'h-48 w-full']"
@@ -62,13 +68,6 @@ const isLoaded = ref(false)
         }}
       </p>
       <div class="mt-auto flex pt-5">
-        <a
-          v-for="tag in props.article.tags"
-          :key="tag"
-          class="group mr-1 cursor-pointer text-sm whitespace-nowrap lowercase"
-        >
-          <span class="group-hover:text-blue-500 group-hover:underline">#{{ tag }}</span> &bull;
-        </a>
         <span class="truncate text-sm text-neutral-500">{{
           formatDate(props.article.timestamp, 'MMMM dd, yyyy')
         }}</span>

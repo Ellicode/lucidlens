@@ -5,7 +5,6 @@ export interface Article {
   title: string
   description: string
   image?: string
-  tags: string[]
   headline?:
     | 'breaking'
     | 'trending'
@@ -18,6 +17,7 @@ export interface Article {
   timestamp: Date
   author?: string
   content?: string
+  visible?: boolean
 }
 
 export interface User {
@@ -26,6 +26,11 @@ export interface User {
   displayName: string
   photoURL: string
   subscription: 'free' | 'premium'
+  biography: string
+  interests: string[]
+  // Reading preferences
+  fontSize: number
+  font: 'sans-serif' | 'serif' | 'dyslexic'
 }
 
 export interface Suggestion {

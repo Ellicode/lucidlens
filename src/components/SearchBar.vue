@@ -60,7 +60,6 @@ const addArticle = async () => {
   const doc = await addDoc(collection(db, 'articles'), generatedArticle.value)
   generatedArticle.value!.id = doc.id
 }
-
 const askAI = async () => {
   if (auth.currentUser === null) {
     noUserModal.value = true
@@ -94,18 +93,27 @@ const askAI = async () => {
       content = content.replace(titleMatch[0], '')
     }
     content = content.replace('(#title)', '')
+
+    // Extract description from blockquote format
+    const descriptionMatch = content.match(/>>>\s*(.*?)(\n|$)/)
+    const description = descriptionMatch ? descriptionMatch[1] : content.slice(0, 100)
+
+    // Remove description blockquote from content if found
+    if (descriptionMatch) {
+      content = content.replace(descriptionMatch[0], '')
+    }
+
     const image = await unsplash.search.getPhotos({
       query: title,
       orientation: 'landscape',
       perPage: 1,
     })
     generatedArticle.value = {
-      author: auth.currentUser?.displayName || 'Anonymous',
+      author: auth.currentUser.uid,
       timestamp: new Date(),
       content: content,
       image: image.response ? image.response.results[0].urls.full : '',
-      description: content.replace(/^# .*\n/, '').slice(0, 100),
-      tags: ['ai', 'generated'],
+      description: description,
       title: title,
     } as Article
     console.log(generatedArticle.value)
@@ -121,7 +129,7 @@ const askAI = async () => {
 <template>
   <div class="mb-5">
     <div
-      class="flex h-16 items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-50"
+      class="flex h-16 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50"
     >
       <MagnifyingGlassIcon class="ms-3 h-6 w-6 text-neutral-500" />
 
@@ -132,7 +140,7 @@ const askAI = async () => {
         @focus="showSuggestions = true"
         @blur="showSuggestions = false"
         @keydown.enter="askAI"
-        placeholder="Ask or search any topic"
+        placeholder="Ask AI or search any topic"
       />
 
       <button
@@ -143,7 +151,7 @@ const askAI = async () => {
             : 'bg-primary-500'
         "
         :disabled="loading !== 'idle' && loading !== 'complete'"
-        class="me-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-white transition duration-300 not-[:disabled]:hover:scale-105 not-[:disabled]:active:scale-95"
+        class="me-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded text-white transition duration-300 not-[:disabled]:hover:scale-105 not-[:disabled]:active:scale-95"
       >
         <ArrowUpIcon v-if="loading === 'idle' || loading === 'complete'" class="h-6 w-6" />
         <ProgressIndicator size="xs" v-else class="h-6 w-6 text-white" />
@@ -152,7 +160,7 @@ const askAI = async () => {
 
     <div
       :class="showSuggestions ? '-translate-y-0 opacity-100' : '-translate-y-5 opacity-0'"
-      class="mt-4 flex h-10 w-full gap-2 overflow-scroll transition"
+      class="hide-scrollbar mt-4 flex h-10 w-full gap-2 overflow-scroll transition"
     >
       <button
         v-for="suggestion in filteredSuggestions.slice(0, 5)"
@@ -191,13 +199,6 @@ const askAI = async () => {
           <h1 class="mb-5 font-serif text-3xl">{{ generatedArticle?.title }}</h1>
           <p class="mb-5 text-neutral-500 italic">{{ generatedArticle?.description }}</p>
           <p class="mb-5">
-            <a
-              v-for="tag in generatedArticle?.tags"
-              :key="tag"
-              class="group mr-1 cursor-pointer text-sm whitespace-nowrap lowercase"
-            >
-              <span class="group-hover:text-blue-500 group-hover:underline">#{{ tag }}</span> &bull;
-            </a>
             By <span class="font-semibold">{{ generatedArticle?.author }}</span>
           </p>
           <div v-html="convertMarkdownToHtml(generatedArticle?.content || '')"></div>
@@ -269,5 +270,9 @@ const askAI = async () => {
 .fadeAndScale-leave-to {
   opacity: 0;
   transform: scale(0.5);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 </style>

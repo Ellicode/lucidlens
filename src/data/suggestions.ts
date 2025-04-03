@@ -62,7 +62,7 @@ const suggestions = [
   },
   {
     query: 'World politics',
-    prompt: 'Stay updated on world politics',
+    prompt: 'Let me updated on world politics',
     icon: GlobeAltIcon,
     color: 'text-indigo-600',
   },
@@ -116,7 +116,7 @@ const suggestions = [
   },
   {
     query: 'Fashion trends',
-    prompt: 'Stay updated on fashion trends',
+    prompt: 'Let me updated on fashion trends',
     icon: ScissorsIcon,
     color: 'text-purple-600',
   },
