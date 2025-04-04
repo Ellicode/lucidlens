@@ -148,7 +148,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex w-full items-start gap-5 md:border-l-2 md:border-l-neutral-100 md:pl-10">
+  <div
+    class="flex w-full items-start gap-5 md:border-l-2 md:border-l-neutral-100 md:pl-10"
+    :class="{
+      'blur-md': !auth.currentUser,
+    }"
+  >
     <img
       :src="user?.photoURL || ''"
       :alt="user?.displayName || 'user photo'"
