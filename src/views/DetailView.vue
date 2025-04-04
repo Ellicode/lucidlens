@@ -18,6 +18,7 @@ import { InformationCircleIcon } from '@heroicons/vue/16/solid'
 import { XMarkIcon } from '@heroicons/vue/24/solid'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
 import CommentCard from '@/components/CommentCard.vue'
+import SignInModal from '@/components/SignInModal.vue'
 
 const article = ref<Article | null | boolean>(false)
 const isLoaded = ref(false)
@@ -95,7 +96,7 @@ const unsubscribeComments = onSnapshot(
 )
 
 const userOpinion = ref<'left' | 'neutral' | 'right' | null>(null)
-
+const signInModal = ref(false)
 const sendOpinion = async (value: 'left' | 'neutral' | 'right' | null) => {
   const user = auth.currentUser
   if (user) {
@@ -105,6 +106,8 @@ const sendOpinion = async (value: 'left' | 'neutral' | 'right' | null) => {
     } else {
       await deleteDoc(opinionRef)
     }
+  } else {
+    signInModal.value = true
   }
 }
 
@@ -114,6 +117,10 @@ const comment = ref<string>()
 const commentBtnLoading = ref(false)
 const sendComment = async () => {
   if (!comment.value) return
+  if (!auth.currentUser) {
+    signInModal.value = true
+    return
+  }
   commentBtnLoading.value = true
   await addDoc(collection(db, 'articles', route.params.id as string, 'comments'), {
     author: auth.currentUser?.uid,
@@ -458,6 +465,7 @@ onMounted(async () => {
         </form>
       </div>
     </div>
+    <SignInModal v-model="signInModal" />
   </div>
 </template>
 

@@ -1,8 +1,17 @@
 <script setup lang="ts">
-import { db } from '@/firebase'
+import { auth, db } from '@/firebase'
 import type { Comment, User } from '@/types'
-import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore'
-import { onMounted, ref, watch } from 'vue'
+import {
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from 'firebase/firestore'
+import { onMounted, ref, watch, h, type VNode } from 'vue'
 import UserFlair from './UserFlair.vue'
 import { convertMarkdownToHtml } from '@/utils'
 import { PencilSquareIcon, TrashIcon } from '@heroicons/vue/16/solid'
@@ -21,6 +30,8 @@ const deleteButtonLoading = ref(false)
 const newContent = ref<string>('')
 const editButtonLoading = ref(false)
 const editModal = ref(false)
+const mentionVNodes = ref<Array<VNode | string>>([])
+
 const deleteComment = async () => {
   if (!props.comment) return
   deleteButtonLoading.value = true
@@ -50,9 +61,33 @@ const editComment = async () => {
   editButtonLoading.value = false
   editModal.value = false
 }
+
+async function parseMentions(content: string) {
+  mentionVNodes.value = []
+  const segments = content.split(/(@\S+)/g)
+  for (const seg of segments) {
+    if (seg.startsWith('@')) {
+      const displayName = seg.substring(1)
+      const q = query(collection(db, 'users'), where('displayName', '==', displayName))
+      const snapshot = await getDocs(q)
+      let userData = null
+      snapshot.forEach((doc) => {
+        userData = doc.data()
+      })
+      if (userData) {
+        mentionVNodes.value.push(h(UserFlair, { user: userData }))
+      } else {
+        mentionVNodes.value.push(seg)
+      }
+    } else {
+      mentionVNodes.value.push(seg)
+    }
+  }
+}
+
 watch(
   () => props.comment,
-  (newVal) => {
+  async (newVal) => {
     if (newVal) {
       newContent.value = newVal.content
       htmlContent.value = convertMarkdownToHtml(newVal.content)
@@ -65,6 +100,7 @@ watch(
             minute: '2-digit',
           })
         : null
+      await parseMentions(newVal.content)
     }
   },
 )
@@ -125,19 +161,24 @@ onMounted(async () => {
         </p>
         <div class="flex-1"></div>
         <button
+          v-if="props.comment?.author === auth.currentUser?.uid"
           class="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-neutral-50 active:bg-neutral-100"
           @click="editModal = true"
         >
           <PencilSquareIcon class="h-4 w-4 text-neutral-500" />
         </button>
         <button
+          v-if="props.comment?.author === auth.currentUser?.uid"
           class="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full hover:bg-red-50 active:bg-red-100"
           @click="deleteModal = true"
         >
           <TrashIcon class="h-4 w-4 text-red-500" />
         </button>
       </div>
-      <div v-html="htmlContent"></div>
+      <div v-if="mentionVNodes.length">
+        <component v-for="(node, idx) in mentionVNodes" :key="idx" :is="node" />
+      </div>
+      <div v-else v-html="htmlContent"></div>
     </div>
   </div>
   <div

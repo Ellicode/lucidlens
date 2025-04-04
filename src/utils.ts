@@ -63,6 +63,12 @@ export const convertMarkdownToHtml = (markdown: string): string => {
         `<a class="text-blue-500 hover:text-blue-600 hover:underline" href="${p2}">${p1}</a>`,
     },
     { regex: /\n/gim, replacement: () => '</p><p class="mb-5">' }, // Add support for <p> tags
+    //mentions
+    {
+      regex: /@(\w+)/gim,
+      replacement: (_: string, p1: string) =>
+        `<a class="hover:text-blue-500 cursor-pointer text-neutral-500 hover:underline">${p1}</a>`,
+    },
   ]
 
   return `<p class="mb-5">${rules.reduce((acc, rule) => acc.replace(rule.regex, rule.replacement), markdown.replace('<', '&lt;').replace('>', '&gt;'))}</p>`

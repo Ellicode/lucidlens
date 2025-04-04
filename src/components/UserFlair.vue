@@ -10,7 +10,7 @@ const typingInterval = ref<number | null>(null)
 
 watch(showFlair, (newVal) => {
   if (newVal) {
-    const bioRef = model.value?.biography || ''
+    const bioRef = model.value?.biography.replace('<', '&lt;').replace('>', '&gt;') || ''
     let index = 0
 
     // Clear any existing interval

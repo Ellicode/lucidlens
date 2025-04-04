@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { UserIcon } from '@heroicons/vue/20/solid'
 import ProgressIndicator from '@/components/ProgressIndicator.vue'
 import { formatDate } from 'date-fns'
 import { XMarkIcon } from '@heroicons/vue/24/outline'
 import SignInModal from './SignInModal.vue'
 import AccountModalView from './AccountModalView.vue'
 import { auth } from '@/firebase'
+import { Cog6ToothIcon, UsersIcon } from '@heroicons/vue/20/solid'
 
 const showAccountModal = ref<boolean>(false)
 const isLoggedIn = ref<boolean | null>(null)
@@ -48,13 +48,19 @@ onMounted(() => {
         {{ currentDate }}
       </h2>
     </div>
-    <div class="ms-auto flex items-center gap-5" v-if="isLoggedIn">
+    <div class="ms-auto flex items-center gap-3" v-if="isLoggedIn">
       <button
         @click="showAccountModal = !showAccountModal"
         class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-neutral-100"
       >
-        <UserIcon class="h-6 w-6 text-neutral-900" />
+        <Cog6ToothIcon class="h-5 w-5 text-neutral-900" />
       </button>
+      <router-link
+        :to="{ name: 'friends' }"
+        class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-neutral-100"
+      >
+        <UsersIcon class="h-5 w-5 text-neutral-900" />
+      </router-link>
 
       <button
         class="bg-primary-100 text-primary-700 hover:bg-primary-200 active:border-primary-400 ms-auto flex cursor-pointer items-center rounded-md border border-transparent p-2 text-sm duration-100"
