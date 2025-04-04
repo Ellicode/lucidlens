@@ -180,7 +180,7 @@ const interestsList = [
       </form>
 
       <div
-        class="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200 bg-neutral-100"
+        class="flex flex-col divide-y divide-neutral-200 rounded-md border border-neutral-200 bg-neutral-50"
       >
         <button
           @click="accountPage = 'delete'"
@@ -227,7 +227,7 @@ const interestsList = [
       <button
         @click="deleteAccount()"
         :disabled="deleteButtonLoading"
-        class="float-end cursor-pointer rounded-md border border-transparent bg-red-500 p-2 text-sm text-red-50 duration-100 hover:bg-red-600 active:border-red-400 disabled:bg-neutral-300 disabled:hover:bg-neutral-300 disabled:active:border-neutral-300"
+        class="float-end cursor-pointer rounded-md border border-transparent bg-red-500 p-2 px-3 text-sm text-red-50 duration-100 disabled:opacity-75 disabled:grayscale-100"
       >
         <template v-if="deleteButtonLoading">
           <ProgressIndicator size="xs" class="text-white" />

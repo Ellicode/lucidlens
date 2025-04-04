@@ -50,7 +50,7 @@ watch(showFlair, (newVal) => {
     <transition name="fade">
       <div
         v-if="showFlair"
-        class="absolute top-full left-0 min-h-48 w-96 rounded-lg border border-gray-200 bg-white p-5 text-black shadow"
+        class="absolute top-full left-0 z-20 min-h-48 w-96 rounded-lg border border-gray-200 bg-white p-5 text-black shadow"
       >
         <div class="flex items-center">
           <img

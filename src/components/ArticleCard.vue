@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, useTemplateRef } from 'vue'
 import { formatDate } from 'date-fns'
 import type { Article } from '@/types'
 import { PhotoIcon } from '@heroicons/vue/24/outline'
+import { useElementVisibility } from '@vueuse/core'
 
 const props = defineProps<{
   article: Article
   layout: 'horizontal' | 'vertical'
 }>()
+const target = useTemplateRef<HTMLElement>('target')
+const targetIsVisible = useElementVisibility(target)
 
 const isLoaded = ref(false)
 </script>
@@ -15,6 +18,7 @@ const isLoaded = ref(false)
   <router-link
     :to="{ name: 'detail', params: { id: props.article.id } }"
     class="flex overflow-hidden border border-neutral-100"
+    ref="target"
     :class="props.layout === 'horizontal' ? 'flex-row' : 'flex-col'"
   >
     <div
@@ -26,12 +30,11 @@ const isLoaded = ref(false)
       v-if="props.article.image"
     >
       <img
-        loading="lazy"
         :src="props.article.image"
         alt="Article Image"
-        decoding="async"
         @load="isLoaded = true"
         v-show="isLoaded"
+        v-if="targetIsVisible"
         class="absolute inset-0 h-full w-full object-cover brightness-90 contrast-125"
       />
     </div>

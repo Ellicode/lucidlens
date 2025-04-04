@@ -39,3 +39,12 @@ export interface Suggestion {
   color: string
   icon: Component
 }
+
+export interface Comment {
+  id: string
+  author: string
+  content: string
+  timestamp: Date
+  parentId?: string
+  createdAt: Date
+}
