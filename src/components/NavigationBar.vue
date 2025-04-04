@@ -84,7 +84,7 @@ onMounted(() => {
   <SignInModal v-model="signInModal" />
   <transition mode="out-in" name="popup">
     <div
-      class="fixed right-5 bottom-5 z-10 flex h-[200px] w-full max-w-3xl flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-xl"
+      class="fixed right-0 bottom-0 z-10 flex w-full max-w-3xl flex-col rounded-xl border border-neutral-100 bg-white p-5 shadow-xl md:right-5 md:bottom-5 md:h-[200px]"
       v-if="showbottomPopup == true"
     >
       <div class="mb-5 flex items-center justify-between">
