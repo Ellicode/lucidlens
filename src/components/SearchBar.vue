@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import suggestions from '@/data/suggestions'
 import { MagnifyingGlassIcon } from '@heroicons/vue/24/solid'
 import { ArrowUpIcon } from '@heroicons/vue/20/solid'
@@ -7,6 +7,7 @@ import { type Article, type Suggestion } from '@/types'
 import ProgressIndicator from './ProgressIndicator.vue'
 import {
   ExclamationTriangleIcon,
+  FaceFrownIcon,
   GlobeAmericasIcon,
   PencilIcon,
   PhotoIcon,
@@ -23,6 +24,7 @@ import { auth, db } from '@/firebase'
 import { convertMarkdownToHtml } from '@/utils'
 import SignInModal from './SignInModal.vue'
 import { createApi } from 'unsplash-js'
+import { GlobeAltIcon } from '@heroicons/vue/16/solid'
 const unsplash = createApi({
   accessKey: '8iwxWBrhPjhDNTWsofAERHQWpCK5_0-IwWkuQJbpITQ',
   fetch: fetch,
@@ -31,8 +33,22 @@ const unsplash = createApi({
 const searchSuggestions = ref<Suggestion[]>([])
 const showSuggestions = ref(false)
 const loading = ref('idle')
-const generatedArticle = ref<Article | null>(null)
-
+const generatedArticle = ref<Article | null | 'no-data'>(null)
+const showPlaceholder = ref(true)
+const placeholders = [
+  'What is the meaning of life?',
+  'How to learn Vue.js?',
+  'Best practices for web development',
+  'How to cook pasta?',
+  'What is the future of AI?',
+  'How to stay healthy?',
+  'Tips for effective communication',
+  'How to manage time effectively?',
+  'What are the benefits of meditation?',
+  'How to improve productivity?',
+  'What is the best way to learn a new language?',
+]
+const currentPlaceholder = ref('')
 const filteredSuggestions = computed(() => {
   return searchSuggestions.value.filter(
     (suggestion) =>
@@ -50,9 +66,23 @@ onMounted(() => {
       loading.value = 'idle'
     }
   })
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    // Check if the click is outside the search bar container
+    if (searchBar_container.value && !searchBar_container.value.contains(target)) {
+      showPlaceholder.value = true
+    }
+  })
+  currentPlaceholder.value = placeholders[Math.floor(Math.random() * placeholders.length)]
+  setInterval(() => {
+    if (searchQuery.value === '') {
+      currentPlaceholder.value = placeholders[Math.floor(Math.random() * placeholders.length)]
+    }
+  }, 5000)
 })
 
 const addArticle = async () => {
+  if (generatedArticle.value === null || generatedArticle.value === 'no-data') return
   if (auth.currentUser === null) {
     noUserModal.value = true
     return
@@ -84,6 +114,12 @@ const askAI = async () => {
       agent_scratchpad: '',
     })
     console.log(response)
+
+    if (response.output === '(#no-data)') {
+      generatedArticle.value = 'no-data'
+      loading.value = 'complete'
+      return
+    }
     const titleMatch = response.output.match(/# (.*?)(\n|$)/)
     let title = titleMatch ? titleMatch[1] : searchQuery.value
     title = title.charAt(0).toUpperCase() + title.slice(1)
@@ -103,6 +139,22 @@ const askAI = async () => {
       content = content.replace(descriptionMatch[0], '')
     }
 
+    // Extract sources from the content
+    const sourcesRegex = /- \[(.*?)\]\((https?:\/\/[^\s)]+)\)/g
+    let sourceMatch
+    const sources = []
+    while ((sourceMatch = sourcesRegex.exec(content)) !== null) {
+      sources.push({
+        title: sourceMatch[1],
+        url: sourceMatch[2],
+      })
+    }
+
+    // Remove sources section from the content
+    content = content.replace(/## Sources\s*[\s\S]*$/, '').trim()
+    // Also remove any other format of source lists
+    content = content.replace(/- \[(.*?)\]\((https?:\/\/[^\s)]+)\)/g, '').trim()
+
     const image = await unsplash.search.getPhotos({
       query: title,
       orientation: 'landscape',
@@ -115,6 +167,7 @@ const askAI = async () => {
       image: image.response ? image.response.results[0].urls.full : '',
       description: description,
       title: title,
+      sources: sources,
     } as Article
     console.log(generatedArticle.value)
 
@@ -125,6 +178,15 @@ const askAI = async () => {
 
   loading.value = 'complete'
 }
+
+const searchBar_container = ref<HTMLElement | null>(null)
+const searchBar = ref<HTMLElement | null>(null)
+
+const placeholderOnClick = async () => {
+  showPlaceholder.value = false
+  await nextTick()
+  searchBar.value?.focus()
+}
 </script>
 <template>
   <div class="mb-5">
@@ -133,16 +195,30 @@ const askAI = async () => {
     >
       <MagnifyingGlassIcon class="ms-3 h-6 w-6 text-neutral-500" />
 
+      <div
+        v-if="showPlaceholder && searchQuery === ''"
+        @click="placeholderOnClick"
+        ref="searchBar_container"
+        class="flex-1 px-3"
+      >
+        <transition mode="out-in" name="placeholder">
+          <!-- To add a nice effect, breaks the transition. -->
+          <!-- animate-gradient bg-gradient-to-r from-neutral-400 via-neutral-600 to-neutral-400 bg-clip-text text-transparent -->
+          <span :key="currentPlaceholder" class="pe-2 font-serif text-lg text-neutral-500 italic">
+            {{ currentPlaceholder }}
+          </span>
+        </transition>
+      </div>
       <input
+        v-else
         type="text"
         v-model="searchQuery"
+        ref="searchBar"
         class="h-full flex-1 px-3 outline-0"
         @focus="showSuggestions = true"
-        @blur="showSuggestions = false"
+        @blur="((showSuggestions = false), (showPlaceholder = true))"
         @keydown.enter="askAI"
-        placeholder="Ask AI or search any topic"
       />
-
       <button
         @click="askAI"
         :class="
@@ -160,13 +236,13 @@ const askAI = async () => {
 
     <div
       :class="showSuggestions ? '-translate-y-0 opacity-100' : '-translate-y-5 opacity-0'"
-      class="hide-scrollbar mt-4 flex h-10 w-full gap-2 overflow-scroll transition"
+      class="hide-scrollbar mt-4 flex h-8 w-full gap-2 overflow-scroll transition"
     >
       <button
         v-for="suggestion in filteredSuggestions.slice(0, 5)"
         :key="suggestion.query"
         @click="((searchQuery = suggestion.prompt), (showSuggestions = false))"
-        class="flex cursor-pointer items-center gap-2 rounded-xl bg-neutral-100 px-3 py-2"
+        class="flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 px-3"
       >
         <Component :class="suggestion.color" class="me-2 h-4 w-4" :is="suggestion.icon"></Component>
 
@@ -183,7 +259,30 @@ const askAI = async () => {
       class="max-h-9/10 min-h-96 w-full max-w-4xl overflow-auto rounded-md bg-white p-7 shadow-lg"
     >
       <div class="relative" v-if="loading === 'complete'">
-        <template v-if="generatedArticle">
+        <div
+          class="flex w-full flex-col items-center justify-center gap-5 py-10"
+          v-if="generatedArticle == 'no-data'"
+        >
+          <FaceFrownIcon class="h-10 w-10 text-neutral-500" />
+          <h1 class="font-serif text-3xl">Can't generate your article</h1>
+          <p class="text-neutral-500">
+            LucidAI couldn't find valuable information on the web about your query. Please try again
+            with a different query.
+          </p>
+          <button @click="loading = 'idle'" class="text-primary-500 cursor-pointer">Back</button>
+        </div>
+        <div
+          class="flex w-full flex-col items-center justify-center gap-5 py-10"
+          v-else-if="generatedArticle == null"
+        >
+          <ExclamationTriangleIcon class="h-10 w-10 text-neutral-500" />
+          <h1 class="font-serif text-3xl">Generation error</h1>
+          <p class="text-neutral-500">
+            It seems that LucidAI has ran into some issues while generating your post. Retry it?
+          </p>
+          <button @click="askAI" class="text-primary-500 cursor-pointer">Retry</button>
+        </div>
+        <template v-else>
           <div
             class="mb-5 flex h-52 w-full items-center justify-center bg-neutral-200"
             v-if="!generatedArticle.image"
@@ -202,6 +301,21 @@ const askAI = async () => {
             By <span class="font-semibold">{{ generatedArticle?.author }}</span>
           </p>
           <div v-html="convertMarkdownToHtml(generatedArticle?.content || '')"></div>
+          <div class="mt-5 flex w-full flex-col items-center justify-center gap-5">
+            <h2 class="font-serif text-lg">* * *</h2>
+            <ul class="w-full gap-2 space-y-2 space-x-2">
+              <span
+                v-for="source in generatedArticle?.sources"
+                :key="source.url"
+                class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2"
+              >
+                <GlobeAltIcon class="h-4 w-4 text-neutral-500" />
+                <a :href="source.url" target="_blank" class="text-sm font-medium text-neutral-800">
+                  {{ source.title }}
+                </a>
+              </span>
+            </ul>
+          </div>
           <div class="sticky right-0 bottom-0 ms-auto flex justify-end">
             <button
               @click="addArticle"
@@ -219,14 +333,6 @@ const askAI = async () => {
             </router-link>
           </div>
         </template>
-        <div class="flex w-full flex-col items-center justify-center gap-5 py-10" v-else>
-          <ExclamationTriangleIcon class="h-10 w-10 text-neutral-500" />
-          <h1 class="font-serif text-3xl">Generation error</h1>
-          <p class="text-neutral-500">
-            It seems that the AI has ran into some issues while generating your post. Retry it?
-          </p>
-          <button @click="askAI" class="text-primary-500 cursor-pointer">Retry</button>
-        </div>
       </div>
       <template v-else>
         <div class="h-5 w-9/10 animate-pulse bg-neutral-50"></div>
@@ -274,5 +380,41 @@ const askAI = async () => {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.placeholder-enter-active,
+.placeholder-leave-active {
+  transition: all 0.2s;
+  display: inline-block;
+}
+
+.placeholder-enter-from {
+  transform: translateY(100%);
+}
+.placeholder-enter-from,
+.placeholder-leave-to {
+  opacity: 0;
+}
+.placeholder-enter-to,
+.placeholder-leave-from {
+  transform: translateY(0);
+}
+
+.placeholder-leave-to {
+  transform: translateY(-100%);
+}
+
+.animate-gradient {
+  background-size: 200% auto;
+  animation: gradient 3s linear infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 200% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 </style>

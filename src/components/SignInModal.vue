@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ExclamationCircleIcon } from '@heroicons/vue/20/solid'
-import { XMarkIcon } from '@heroicons/vue/24/outline'
+import { SparklesIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { onMounted, ref } from 'vue'
 import { GoogleAuthProvider, signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { auth, db, googleProvider } from '@/firebase'
@@ -120,37 +120,52 @@ onMounted(() => {
     v-if="model"
   >
     <div class="w-full max-w-2xl rounded-md bg-white p-7 shadow-lg">
-      <div class="mb-5 flex items-center">
-        <h3 class="font-serif text-2xl">Sign in to enjoy the full potential of LucidLens.</h3>
+      <div class="mb-5 flex items-center justify-end">
         <button
           @click="model = false"
-          class="ms-auto flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-neutral-100"
+          class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full hover:bg-neutral-100"
         >
           <XMarkIcon class="h-6 w-6 text-neutral-900" />
         </button>
       </div>
+      <SparklesIcon class="text-primary-500 mx-auto mb-10 h-10 w-10" />
+      <h3 class="mb-5 font-serif text-2xl">Sign in to enjoy the full potential of LucidLens.</h3>
       <p class="mb-5 text-neutral-500">
         Sign in to LucidLens to create articles with AI, save your favorite articles, and more. If
         you don't have an account, you can create one for free.
       </p>
-      <div class="mb-10 flex justify-center rounded-xl bg-neutral-200 p-2">
+      <div class="relative mb-10 flex justify-center rounded-xl bg-neutral-200 p-2">
+        <div
+          class="absolute top-1/2 mx-2 h-8 transition-all duration-300 ease-in-out"
+          :style="{
+            width: '50%',
+            transform:
+              mode === 'signIn'
+                ? 'translateX(0) translateY(-50%)'
+                : 'translateX(95%) translateY(-50%)',
+            backgroundColor: 'white',
+            borderRadius: '0.375rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            left: '0',
+          }"
+        ></div>
         <button
           @click="mode = 'signIn'"
           :class="{
-            'border-neutral-300 bg-white shadow': mode === 'signIn',
-            'border-transparent bg-transparent text-neutral-600': mode !== 'signIn',
+            'text-neutral-900': mode === 'signIn',
+            'text-neutral-600': mode !== 'signIn',
           }"
-          class="flex-1 cursor-pointer rounded-md border px-4 py-1 font-medium transition duration-100"
+          class="z-10 flex-1 cursor-pointer rounded-md px-4 py-1 font-medium transition duration-100 active:scale-95"
         >
           Sign In
         </button>
         <button
           @click="mode = 'signUp'"
           :class="{
-            'border-neutral-300 bg-white shadow': mode === 'signUp',
-            'border-transparent bg-transparent text-neutral-600': mode !== 'signUp',
+            'text-neutral-900': mode === 'signUp',
+            'text-neutral-600': mode !== 'signUp',
           }"
-          class="flex-1 cursor-pointer rounded-md border px-4 py-1 font-medium transition duration-100"
+          class="z-10 flex-1 cursor-pointer rounded-md px-4 py-1 font-medium transition duration-100 active:scale-95"
         >
           Sign Up
         </button>

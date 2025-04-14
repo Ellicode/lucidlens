@@ -39,10 +39,10 @@ export const convertMarkdownToHtml = (markdown: string): string => {
         `<code class="bg-gray-100 p-1 text-sm rounded font-mono">${p1}</code>`,
     },
     {
-      // Match blockquotes (with a simpler approach)
-      regex: /^(>|&gt;)[ ]\s*(.*?)$/gim,
-      replacement: (_: string, _p1: string, p2: string) =>
-        `<blockquote class="text-lg font-serif px-5 border-l-2 border-neutral-200 my-5 italic">${p2}</blockquote>`,
+      // Match blockquotes (supporting both > and >>> symbols)
+      regex: /^(>{1,3}|&gt;{1,3})\s*(.*?)$/gim,
+      replacement: (_: string, _unused: string, p2: string) =>
+        `<blockquote class="text-lg font-serif px-5 border-l-2 border-neutral-200 my-5 italic">${p2.replace(/^(\s*(>{1,3}|&gt;{1,3})\s*)+/, '')}</blockquote>`,
     },
     {
       regex: /^(\*{3,}|_{3,}|-{3,})$/gim,

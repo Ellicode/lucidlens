@@ -11,10 +11,14 @@ export class WriterAgent extends BaseAgent {
         `Make a news article formatted in markdown from the given data.
         You should write the title of the article with a markdown heading like in this example : # Title of the post.
         You should write the description of the article (2 sentences long) with a markdown blockquote like in this example : >>> This is the description of the post.
+        You should write the sources that you used at the end of the article as list of markdown links like in this example :
+        - [source1](https://example.com)
+        - [source2](https://example.com)
         Use the structure of a news article.
         Be as neutral as possible.
         Make the content engaging and informative for the reader.
-        It should be about 4 paragraphs long.`,
+        Use markdown syntax to format the article.
+        If you don't have enough information to write the article only return "no-data"`,
       ],
       ['human', '{input}'],
       ['assistant', '{agent_scratchpad}'],

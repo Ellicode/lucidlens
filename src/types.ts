@@ -17,6 +17,10 @@ export interface Article {
   timestamp: Date
   author?: string
   content?: string
+  sources?: {
+    title: string
+    url: string
+  }[]
   visible?: boolean
 }
 
